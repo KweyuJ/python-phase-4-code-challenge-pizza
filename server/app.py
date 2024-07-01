@@ -17,28 +17,41 @@ migrate = Migrate(app, db)
 db.init_app(app)
 api = Api(app)
 
+
 @app.route("/")
 def index():
     return "<h1>Code challenge</h1>"
+
 
 @app.route("/restaurants", methods=["GET"])
 def get_restaurants():
     try:
         restaurants = Restaurant.query.all()
-        return jsonify([restaurant.to_dict(include_pizzas=False) for restaurant in restaurants]), 200
+        response = make_response(
+            jsonify(
+                [restaurant.to_dict(include_pizzas=False) for restaurant in restaurants]
+            ),
+            200,
+        )
+        return response
     except Exception as e:
-        return jsonify({"error": "Internal Server Error"}), 500
+        response = make_response(jsonify({"error": "Internal Server Error"}), 500)
+        return response
+
 
 @app.route("/restaurants/<int:id>", methods=["GET"])
 def get_restaurant(id):
     try:
         restaurant = Restaurant.query.get(id)
         if restaurant:
-            return jsonify(restaurant.to_dict()), 200
+            response = make_response(jsonify(restaurant.to_dict()), 200)
         else:
-            return jsonify({"error": "Restaurant not found"}), 404
+            response = make_response(jsonify({"error": "Restaurant not found"}), 404)
+        return response
     except Exception as e:
-        return jsonify({"error": "Internal Server Error"}), 500
+        response = make_response(jsonify({"error": "Internal Server Error"}), 500)
+        return response
+
 
 @app.route("/restaurants/<int:id>", methods=["DELETE"])
 def delete_restaurant(id):
@@ -47,19 +60,25 @@ def delete_restaurant(id):
         if restaurant:
             db.session.delete(restaurant)
             db.session.commit()
-            return make_response("", 204)
+            response = make_response("", 204)
         else:
-            return jsonify({"error": "Restaurant not found"}), 404
+            response = make_response(jsonify({"error": "Restaurant not found"}), 404)
+        return response
     except Exception as e:
-        return jsonify({"error": "Internal Server Error"}), 500
+        response = make_response(jsonify({"error": "Internal Server Error"}), 500)
+        return response
+
 
 @app.route("/pizzas", methods=["GET"])
 def get_pizzas():
     try:
         pizzas = Pizza.query.all()
-        return jsonify([pizza.to_dict() for pizza in pizzas]), 200
+        response = make_response(jsonify([pizza.to_dict() for pizza in pizzas]), 200)
+        return response
     except Exception as e:
-        return jsonify({"error": "Internal Server Error"}), 500
+        response = make_response(jsonify({"error": "Internal Server Error"}), 500)
+        return response
+
 
 @app.route("/restaurant_pizzas", methods=["POST"])
 def create_restaurant_pizza():
@@ -69,14 +88,20 @@ def create_restaurant_pizza():
     restaurant_id = data.get("restaurant_id")
 
     try:
-        new_restaurant_pizza = RestaurantPizza(price=price, pizza_id=pizza_id, restaurant_id=restaurant_id)
+        new_restaurant_pizza = RestaurantPizza(
+            price=price, pizza_id=pizza_id, restaurant_id=restaurant_id
+        )
         db.session.add(new_restaurant_pizza)
         db.session.commit()
-        return jsonify(new_restaurant_pizza.to_dict()), 201
+        response = make_response(jsonify(new_restaurant_pizza.to_dict()), 201)
+        return response
     except ValueError as e:
-        return jsonify({"errors": ["validation errors"]}), 400
+        response = make_response(jsonify({"errors": ["validation errors"]}), 400)
+        return response
     except Exception as e:
-        return jsonify({"error": "Internal Server Error"}), 500
-    
-if __name__ == '__main__':
-    app.run(debug=True, port=5555)    
+        response = make_response(jsonify({"error": "Internal Server Error"}), 500)
+        return response
+
+
+if __name__ == "__main__":
+    app.run(debug=True, port=5555)
